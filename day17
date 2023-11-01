@@ -1,0 +1,71 @@
+import requests
+import math
+from datetime import datetime
+import smtplib
+from email.mime.text import MIMEText
+
+MY_LAT = 37.446298 # Your latitude
+MY_LONG = 126.885488 # Your longitude
+
+response = requests.get(url="http://api.open-notify.org/iss-now.json")
+response.raise_for_status()
+data = response.json()
+
+iss_latitude = float(data["iss_position"]["latitude"])
+iss_longitude = float(data["iss_position"]["longitude"])
+print(iss_longitude, iss_latitude)
+
+#Your position is within +5 or -5 degrees of the ISS position.
+
+
+parameters = {
+    "lat": MY_LAT,
+    "lng": MY_LONG,
+    "formatted": 0
+}
+
+response = requests.get("https://api.sunrise-sunset.org/json", params=parameters)
+response.raise_for_status()
+data = response.json()
+sunrise = int(data["results"]["sunrise"].split("T")[1].split(":")[0])
+sunset = int(data["results"]["sunset"].split("T")[1].split(":")[0])
+
+time_now = datetime.now()
+
+#If the ISS is close to my current position
+# and it is currently dark
+# Then send me an email to tell me to look up.
+# BONUS: run the code every 60 seconds.
+
+# 가까이 왔나요?
+length = math.sqrt((MY_LAT -iss_latitude)**2 + (MY_LONG - iss_longitude)**2)
+
+# 밤인가요? 낮인가요?
+def night_one():
+    now = datetime.now()
+    time_check = str(now).split(' ')[1].split(':')[0]
+    if int(time_check) >6 & int(time_check) < 20:
+        return False
+    else:
+        return True
+# 이메일 보내기
+def send_mail():
+    smtp = smtplib.SMTP('smtp.gmail.com',587)
+
+    smtp.ehlo()
+    smtp.starttls()
+
+    from_id = 'kjs11945@gmail.com'
+    to_id = 'kjs119456@gmail.com'
+    app_pw = 'pbgy ropj dweu uwos'
+    smtp.login(from_id, app_pw)
+    msg = MIMEText('하늘 봐봐')
+    smtp.sendmail(from_id,to_id,msg.as_string())
+
+if length <=5 and night_one():
+    send_mail()
+
+
+
+
+
